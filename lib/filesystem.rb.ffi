@@ -1,0 +1,41 @@
+require 'ffi'
+
+module Filesystem
+  extend FFI::Library
+  ffi_lib 'c'
+  class Statvfs < FFI::Struct
+    @@@
+    struct do |s|
+      s.name 'struct statvfs'
+      s.include 'sys/statvfs.h'
+      s.field :f_bsize,:ulong
+      s.field :f_frsize,:ulong
+      s.field :f_blocks,:fsblkcnt_t
+      s.field :f_bfree,:fsblkcnt_t
+      s.field :f_bavail,:fsblkcnt_t
+      s.field :f_files,:fsfilcnt_t
+      s.field :f_ffree,:fsfilcnt_t
+      s.field :f_favail,:fsfilcnt_t
+      s.field :f_fsid,:ulong
+      s.field :f_flag,:ulong
+      s.field :f_namemax,:ulong
+    end
+    @@@
+  end
+
+  attach_function :c_statvfs, 'statvfs', [:string,Statvfs.by_value],:int
+  attach_function :c_fstatvfs, 'fstatvfs', [:string,:pointer],:int
+  class << self
+    def statvfs(pathname)
+      buf=Statvfs.new
+      warn buf.to_ptr
+      ok=0 #c_statvfs(pathname,buf)
+      if ok.zero?
+        warn buf.members
+        return buf
+      else
+        raise SystemCallError.new("statvfs",FFI.errno)
+      end
+    end
+  end
+end
