@@ -4,12 +4,6 @@ class Lizard::Filesystem < Lizard::Monitor
       @attributes[meth] << v
     end
   end
-  [:check].each do |meth|
-    define_method meth do |&blk|
-      @attributes[meth] << blk
-    end
-  end
-  
 end
 
     
