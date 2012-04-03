@@ -21,7 +21,6 @@ class Lizard::Service < Lizard::Monitor
     if [:starting,:stopping].include?(self.status) then
       return
     end
-    warn [:making,self.status,@target_status]
     if EM.reactor_running?
       # XXX set up timeout for this transition
       case @target_status 

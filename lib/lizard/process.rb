@@ -40,7 +40,6 @@ class Lizard::Process < Lizard::Service
   attr_reader :child_pid
   def status
     p=@child_pid
-    warn [:status,p]
     s=if p && (p>0) && ::Process.exists?(p) then
         :run 
       else
@@ -65,13 +64,13 @@ class Lizard::Process < Lizard::Service
       $stderr.reopen(@stderr[1])
       Kernel.exec(self[:start])
     end
-    warn "started #{@child_pid}"
+    syslog :stderr, "started #{@child_pid}"
     @stdout[1].close
     @stderr[1].close    
     true
   end
   def stop_service
-    warn [:l,self[:stop],@attributes]
+    syslog :stderr, "stopping #{@child_pid} by command"
     if self[:stop].first then
       # XXX should take blocks here as well
       warn "explicit stop not yet implemented : #{self[:stop].inspect}"
@@ -81,12 +80,12 @@ class Lizard::Process < Lizard::Service
   end
 
   def child_exited(pid)
-    warn "child #{pid} exited (or detached?)"
+    syslog :stderr, "#{@child_pid} exited (or detached?)"
     @child_pid=-1
     self.make_it_so
   end
   def stream_closed(name)
-    warn "stream for #{name} was closed"
+    syslog :stderr, "#{@child_pid} #{name} stream was closed"
   end
 
   def test_pidfile

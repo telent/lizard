@@ -5,12 +5,13 @@ lizard=Lizard.new
 #Thread.new { EM.run }.abort_on_exception = true
 
 lizard.add Process,'sagepay' do 
+
   user 'stargreen'
   start 'iostat 3'
   target_status :run
 
-  log stderr: {facility: :local1, priority: :warn}
-  log stdout: {facility: :local1, priority: :debug}
+  log stderr: {facility: :user, priority: :warning}
+  log stdout: {facility: :user, priority: :debug}
 
   check do
     http_get 'http://www.google.com', warn: 1, timeout: 5 do |r|

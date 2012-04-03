@@ -77,7 +77,6 @@ class Lizard
       timestamp=Time.now.strftime("%b %_m %H:%M:%S")
       payload=sprintf("<%d>",(f << 3)|p)+
         "#{timestamp} #{@hostname} #{tag}:#{content}"
-      warn payload
       send_datagram payload[0..1023],@host,@port
     end
   end                 

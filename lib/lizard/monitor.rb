@@ -34,7 +34,6 @@ class Lizard::Monitor
   end
   def syslog(stream,message)
     a=@log[stream]
-    warn [:stream,a,@log]
     @lizard.syslog a[:facility],a[:priority],message,self.tag
   end
 end
