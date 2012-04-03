@@ -7,7 +7,6 @@ lizard=Lizard.new
 lizard.add Process,'sagepay' do 
   user 'stargreen'
   start 'iostat 3'
-  detaches false
   target_status :run
   rotate stdout: [size: 100*1024*1024], stderr: [time: 86400]
   check do

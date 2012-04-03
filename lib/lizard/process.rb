@@ -52,10 +52,6 @@ class Lizard::Process < Lizard::Service
   end
 
   def start_service
-    if self[:detaches] then
-      warn ":detaches option is not yet implemented"
-      return false;
-    end
     @status=:starting
     @stdout = IO.pipe
     @stderr = IO.pipe
