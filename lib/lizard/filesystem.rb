@@ -5,5 +5,3 @@ class Lizard::Filesystem < Lizard::Monitor
     end
   end
 end
-
-    

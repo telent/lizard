@@ -58,11 +58,15 @@ class Lizard
     end
   end
 
-  def initialize
+  attr_accessor :command_socket,:syslog_server
+  def initialize(attr={})
     @monitors={}
-  end
-  def command_socket
-    "/tmp/lizard.sock"
+    {
+      command_socket: "/tmp/lizard.sock",
+      syslog_server: "localhost:5514"
+    }.merge(attr).each{|k,v| 
+      s="#{k}=".to_sym; if self.respond_to?(s) then self.send(s,v) end
+    }
   end
 
   def add clss,name,&blk
