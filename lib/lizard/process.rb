@@ -32,7 +32,7 @@ class Lizard::Process < Lizard::Service
     super
   end
 
-  [:user,:start,:stop,:pidfile,:detaches,:rotate].each do |meth|
+  [:user,:start,:stop,:pidfile,:rotate].each do |meth|
     define_method meth do |v|
       @attributes[meth] = v
     end
