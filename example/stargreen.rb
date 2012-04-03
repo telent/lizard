@@ -9,6 +9,9 @@ lizard.add Process,'sagepay' do
   start 'iostat 3'
   target_status :run
 
+  log stderr: {facility: :local1, priority: :warn}
+  log stdout: {facility: :local1, priority: :debug}
+
   check do
     http_get 'http://www.google.com', warn: 1, timeout: 5 do |r|
       r.status==200
