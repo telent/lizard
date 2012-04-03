@@ -14,17 +14,17 @@ class Lizard
       when Signal.list["CHLD"] then
         begin
           while kid=::Process.waitpid(-1,::Process::WNOHANG )
-            warn "reaping #{kid}"
+            #warn "reaping #{kid}"
             if m=@lizard.find_monitor_by_pid(kid) then
-              warn "found monitor #{m.name}"
+              #warn "found monitor #{m.name}"
               m.child_exited(kid)
             end
           end
         rescue Errno::ECHILD
-          warn "No child processes"
+          warn "Received SIGCHLD unexpectedly"
           nil
         end
-        warn "done"
+        #warn "done"
       end
     end
   end
