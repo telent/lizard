@@ -21,7 +21,7 @@ end
 
 lizard.add Process,'sag' do 
   start 'vmstat 10 &'
-  detaches true
+#  detaches true
 end
 
 lizard.start_watch

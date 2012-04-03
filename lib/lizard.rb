@@ -1,5 +1,6 @@
 require 'eventmachine'
 require 'json'
+require 'socket' # for Socket.gethostname
 
 class Lizard
   module SignalHandler
@@ -57,16 +58,43 @@ class Lizard
       send_data ({error: e.inspect}).to_json 
     end
   end
-
+  module Syslog 
+    def initialize(host,port)
+      @host=host; @port=port
+    end
+    def send_message(facility,priority,content,tag="lizard")
+      # per http://www.faqs.org/rfcs/rfc3164.html
+      @hostname||=Socket.gethostname.split(".").first
+      f=[:kernel,:user,:mail,:daemon,:auth,:syslog,
+         :lpr,:news,:uucp,:cron,:authpriv,:ftp,
+         12,13,14,15,
+         :local0,:local1,:local2,:local3,
+         :local4,:local5,:local6,:local7].index(facility)
+      p=[:emerg,:alert,:crit,:err,
+         :warning,:notice,:info,:debug].index(priority)
+      raise "facility #{facility} unrecognized" unless f
+      raise "priority #{priority} unrecognized" unless p
+      timestamp=Time.now.strftime("%b %_m %H:%M:%S")
+      payload=sprintf("<%d>",(f << 3)|p)+
+        "#{timestamp} #{@hostname} #{tag}:#{content}"
+      warn payload
+      send_datagram payload[0..1023],@host,@port
+    end
+  end                 
+  
   attr_accessor :command_socket,:syslog_server
   def initialize(attr={})
     @monitors={}
     {
       command_socket: "/tmp/lizard.sock",
-      syslog_server: "localhost:5514"
+      syslog_server: "localhost:514"
     }.merge(attr).each{|k,v| 
       s="#{k}=".to_sym; if self.respond_to?(s) then self.send(s,v) end
     }
+  end
+
+  def syslog(*args)
+    @syslog_socket.send_message *args
   end
 
   def add clss,name,&blk
@@ -98,6 +126,9 @@ class Lizard
       end
       EM.attach(@signal_pipe[0],SignalHandler,self)
       EM.start_unix_domain_server self.command_socket,CommandHandler,self
+      host,port=@syslog_server.split(/:/)
+      @syslog_socket=EM.open_datagram_socket host,0,Lizard::Syslog,host,port
+
       @monitors.values.each do |l| l.make_it_so end
     end   
   end

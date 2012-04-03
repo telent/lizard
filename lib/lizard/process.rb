@@ -15,12 +15,12 @@ class Lizard::Process < Lizard::Service
   module LogfileHandler
     def initialize(monitor,name)
       @monitor=monitor; @name=name
+      @lizard=@monitor.lizard
     end
     def receive_data(data)
-      $stderr.puts [Time.now.strftime("%s.%l"),
-                    @monitor.name,
-                    @name,
-                    data.inspect].join("\t")
+      data.split(/\n/).each do |l|
+        @monitor.syslog @name,l
+      end
     end
     def unbind 
       @monitor.stream_closed(@name)
@@ -55,8 +55,8 @@ class Lizard::Process < Lizard::Service
     @status=:starting
     @stdout = IO.pipe
     @stderr = IO.pipe
-    EM.attach @stdout[0],LogfileHandler,self,"stdout"
-    EM.attach @stderr[0],LogfileHandler,self,"stderr"
+    EM.attach @stdout[0],LogfileHandler,self,:stdout
+    EM.attach @stderr[0],LogfileHandler,self,:stderr
     @child_pid=Kernel.fork do
       @stdout[0].close
       @stderr[0].close
@@ -72,10 +72,6 @@ class Lizard::Process < Lizard::Service
   end
   def stop_service
     warn [:l,self[:stop],@attributes]
-    if self[:detaches] then
-      warn ":detaches option is not yet implemented"
-      return false;
-    end
     if self[:stop].first then
       # XXX should take blocks here as well
       warn "explicit stop not yet implemented : #{self[:stop].inspect}"
@@ -119,10 +115,12 @@ class Lizard::Process < Lizard::Service
     # processes running when we start.
 
   end
-
+  
+  def tag
+    @name+"["+@child_pid.to_s+"]"
+  end
   
   def stop_watch
-    warn "stoipingf";
     #@stdout[0].close these are already closed?
     #@stderr[0].close
   end
