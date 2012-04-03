@@ -13,9 +13,16 @@ lizard.add Process,'sagepay' do
   log stderr: {facility: :user, priority: :warning}
   log stdout: {facility: :user, priority: :debug}
 
-  check do
+  poll interval: 30, keep: 5 do |results|
     http_get 'http://www.google.com', warn: 1, timeout: 5 do |r|
-      r.status==200
+      results << ((r.status==200) && r.elapsed)
+    end
+    if results.compact.count < 3 then
+      notify "connection flakey"
+    end
+    if results.average > 1 then
+      notify "connection slow"
+      restart
     end
   end
 end
