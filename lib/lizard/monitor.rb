@@ -43,15 +43,21 @@ class Lizard::Monitor
     @polls << Poll.new(args.merge({proc: blk}))
   end
   class FixedLengthArray < Array
+    # A subclass of Array which drops earlier elements when more are added.
+    # This is used for keeping the history of previous polls so that we
+    # can do hysteresis on values or tolerate intermittent errors
     def initialize(size)
       super(size)
       @bound=-size-1
     end
+    # (Short Shameful Confession: this is presently the only method which
+    # actually enforces the size limit)
     def <<(val)
       super(val)
       self[0..@bound]=[]
       self
     end
+    # Take the average of the non-nil values in the array
     def average
       c=self.compact.count
       if c> 0 then
@@ -61,6 +67,7 @@ class Lizard::Monitor
       end
     end
   end
+  # Start the monitor and (where meaningful) the service it monitors.
   def start_service
     # call EM.add_periodic_timer for each poll, according to that poll's
     # interval. 
@@ -68,24 +75,28 @@ class Lizard::Monitor
     @polls.each do |poll|
       poll.results=FixedLengthArray.new(poll.keep)
       poll.timer=EM.add_periodic_timer(poll.interval) {
-        # this block should be evaluated in the context of some object that
-        # has #notify and #restart methods
         self.instance_eval do
           poll.proc.call(poll.results)
         end
       }
     end
   end
+
+  # Stop the monitor and the services it watches
   def stop_service
     @polls.each do |poll|
       poll.timer.cancel
     end
   end
 
+  # Go on, guess what this does
   def restart_service
     self.stop_service and self.start_service
   end
 
+  # #notify is called from #poll body clauses to send emails/texts/pages/
+  # whatever form of notifucation is specified for this monitor by its
+  # #notification clause(s)
   def notify(*message)
     @notifications.each do |n|
       method,defaults=Array(n).first
