@@ -97,14 +97,6 @@ class Lizard
     @syslog_socket.send_message *args
   end
 
-  def notify(monitor,notifications,message)
-    notifications.each do |type,address|
-      c=Lizard::Notification.const_get(type.to_s.upcase)
-      o=c.new self,address,message
-      o.send!
-    end
-  end
-
   def hostname
     @hostname||=Socket.gethostname
   end
