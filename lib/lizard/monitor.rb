@@ -44,7 +44,8 @@ class Lizard::Monitor
   end
   class FixedLengthArray < Array
     # A subclass of Array which drops earlier elements when more are added.
-    # This is used for keeping the history of previous polls so that we
+    # One of these is passed as the argument to a #poll block, in which
+    # it is used to accummulate history of previous polls so that we
     # can do hysteresis on values or tolerate intermittent errors
     def initialize(size)
       super(size)
