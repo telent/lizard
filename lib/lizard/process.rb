@@ -67,7 +67,7 @@ class Lizard::Process < Lizard::Service
     syslog :stderr, "started #{@child_pid}"
     @stdout[1].close
     @stderr[1].close    
-    true
+    super
   end
   def stop_service
     syslog :stderr, "stopping #{@child_pid} by command"
@@ -77,6 +77,7 @@ class Lizard::Process < Lizard::Service
       return false;
     end
     if @child_pid>0 then Process.kill(15,@child_pid) end
+    super
   end
 
   def child_exited(pid)
