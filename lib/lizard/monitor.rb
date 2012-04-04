@@ -26,11 +26,6 @@ class Lizard::Monitor
   def [](k)
     @attributes[k] 
   end
-  [:check].each do |meth|
-    define_method meth do |&blk|
-      @attributes[meth] << blk
-    end
-  end
   def log params
     @log=@log.merge(params)
   end
