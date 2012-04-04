@@ -80,8 +80,20 @@ class Lizard
       send_datagram payload[0..1023],@host,@port
     end
   end                 
+
+  # pathname for unix-domain control socket 
+  attr_accessor :command_socket
+  # hostname:port of the syslog server that we should send all messages
+  # to
+  attr_accessor :syslog_server
+  # how to connect to the mail server.  Accepts a hash of options which
+  # are passed through to EventMachine::Protocols::SmtpClient constructor
+  attr_accessor :mail
+  # default options for various notification modules (see classes in
+  # Lizard::Notifications namespace)
+  attr_accessor :notifications
   
-  attr_accessor :command_socket,:syslog_server,:mail,:notifications
+  # any accessor can be passed as a keyword argument to #new
   def initialize(attr={})
     @monitors={}
     @notifications={}
@@ -93,6 +105,7 @@ class Lizard
     }
   end
 
+  # send to syslog: utility method used by monitors
   def syslog(*args)
     @syslog_socket.send_message *args
   end
@@ -101,6 +114,8 @@ class Lizard
     @hostname||=Socket.gethostname
   end
 
+  # Add a monitor to the system.  Accepts a block argument to configure
+  # monitor: refer to Lizard::Monitor and subclasses for valid options 
   def add clss,name,&blk
     unless clss.is_a?(Lizard::Monitor) then
       clss=Lizard.const_get(clss.to_s.capitalize)
@@ -110,6 +125,7 @@ class Lizard
     mon.lizard=self
     mon
   end
+
   def all
     @monitors
   end
@@ -122,6 +138,8 @@ class Lizard
   def find_monitor_by_name name
     @monitors[name]
   end
+
+  # Start the world
   def start_watch
     EM.run do
       @signal_pipe=IO.pipe
@@ -136,6 +154,8 @@ class Lizard
       @monitors.values.each do |l| l.make_it_so end
     end   
   end
+
+  # Stop the world, get off.
   def stop_watch
     @monitors.each do |l| l.target_status=:stop end
     if @monitors.find {|m| [:run,:stopping].include?(m.status) }  then
