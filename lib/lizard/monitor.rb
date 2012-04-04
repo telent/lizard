@@ -13,6 +13,7 @@ class Lizard::Monitor
     @name=name
     @log={}
     @polls=[]
+    @notifications=[]
     @attributes=Hash.new {|h,k| h[k]=[] }
     # implicit self, because users are expected to be dsl-use-heavy and 
     # ruby-light
@@ -32,6 +33,9 @@ class Lizard::Monitor
   end
   def log params
     @log=@log.merge(params)
+  end
+  def notification n
+    @notifications << n
   end
   def tag
     @name
@@ -80,6 +84,20 @@ class Lizard::Monitor
   def stop_service
     @polls.each do |poll|
       poll.timer.cancel
+    end
+  end
+
+  def restart_service
+    self.stop_service and self.start_service
+  end
+
+  def notify(*message)
+    @notifications.each do |n|
+      method,defaults=Array(n).first
+      c=Lizard::Notification.const_get(method.to_s.capitalize)
+      defaults=(@lizard.notifications[method] || {}).merge(defaults)
+      o=c.new @lizard,self,defaults, message
+      o.send!
     end
   end
 

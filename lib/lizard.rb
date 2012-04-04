@@ -81,9 +81,10 @@ class Lizard
     end
   end                 
   
-  attr_accessor :command_socket,:syslog_server
+  attr_accessor :command_socket,:syslog_server,:mail,:notifications
   def initialize(attr={})
     @monitors={}
+    @notifications={}
     {
       command_socket: "/tmp/lizard.sock",
       syslog_server: "localhost:514"
@@ -94,6 +95,18 @@ class Lizard
 
   def syslog(*args)
     @syslog_socket.send_message *args
+  end
+
+  def notify(monitor,notifications,message)
+    notifications.each do |type,address|
+      c=Lizard::Notification.const_get(type.to_s.upcase)
+      o=c.new self,address,message
+      o.send!
+    end
+  end
+
+  def hostname
+    @hostname||=Socket.gethostname
   end
 
   def add clss,name,&blk
@@ -148,6 +161,7 @@ class Lizard
 end
 
 require_relative './lizard/monitor'
+require_relative './lizard/notification/mail'
 require_relative './lizard/service'
 require_relative './lizard/process'
 require_relative './lizard/filesystem'
