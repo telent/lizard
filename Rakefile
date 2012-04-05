@@ -23,5 +23,11 @@ task :test do
 end
 
 task :doc do
-  sh "erb README.md.erb |pandoc -o README.html -"
+  sh "erb doc/lizard.md.erb |pandoc -o index.html -"
+end
+
+task :push do
+  sh "git push"
+  sh "git checkout gh-pages && git commit -m 'regenerated' index.html && git push -f"
+  sh "git checkout master"
 end
