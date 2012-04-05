@@ -1,3 +1,18 @@
+# # Lizard
+#
+# **Lizard** is a process/service monitor designed for starting and
+# tracking services on Unixy systems.  It is primarily designed for
+# "application" services (web apps, queue runners, RPC services, etc)
+# and is not intended as a general-purpose init replacement.
+# 
+# * It uses a Ruby DSL for describing the services and processes to
+# start and how to monitor them.  Service liveness checks have the full
+# power of Ruby available to them - as long as they don't block on IO
+# * Standard output and error streams from monitored processes is captured
+# and sent to syslog (with per-process configurable facility and priority)
+# to make diagnosis easier when processes fail to start
+
+
 require 'eventmachine'
 require 'json'
 require 'socket' # for Socket.gethostname
@@ -14,9 +29,9 @@ class Lizard
       when Signal.list["CHLD"] then
         begin
           while kid=::Process.waitpid(-1,::Process::WNOHANG )
-            #warn "reaping #{kid}"
+            false and warn "reaping #{kid}"
             if m=@lizard.find_monitor_by_pid(kid) then
-              #warn "found monitor #{m.name}"
+              false and warn "found monitor #{m.name}"
               m.child_exited(kid)
             end
           end
@@ -114,7 +129,8 @@ class Lizard
     @hostname||=Socket.gethostname
   end
 
-  # Add a monitor to the system.  Accepts a block argument to configure
+  # # Add a monitor to the system
+  # Accepts a block argument to configure
   # monitor: refer to Lizard::Monitor and subclasses for valid options 
   def add clss,name,&blk
     unless clss.is_a?(Lizard::Monitor) then
