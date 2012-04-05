@@ -1,101 +1,16 @@
 # # Lizard
 #
-# **Lizard** is a process/service monitor designed for starting and
-# tracking services on Unixy systems.  It is primarily designed for
-# "application" services (web apps, queue runners, RPC services, etc)
-# and is not intended as a general-purpose init replacement.
-# 
-# * It uses a Ruby DSL for describing the services and processes to
-# start and how to monitor them.  Service liveness checks have the full
-# power of Ruby available to them - as long as they don't block on IO
-# * Standard output and error streams from monitored processes is captured
-# and sent to syslog (with per-process configurable facility and priority)
-# to make diagnosis easier when processes fail to start
 
 
 require 'eventmachine'
 require 'json'
 require 'socket' # for Socket.gethostname
 
-class Lizard
-  module SignalHandler
-    def initialize(lizard)
-      @lizard=lizard
-      super
-    end
-    def receive_data data
-      signal=data[0].ord
-      case signal 
-      when Signal.list["CHLD"] then
-        begin
-          while kid=::Process.waitpid(-1,::Process::WNOHANG )
-            false and warn "reaping #{kid}"
-            if m=@lizard.find_monitor_by_pid(kid) then
-              false and warn "found monitor #{m.name}"
-              m.child_exited(kid)
-            end
-          end
-        rescue Errno::ECHILD
-          warn "Received SIGCHLD unexpectedly"
-          nil
-        end
-        #warn "done"
-      end
-    end
-  end
-  module CommandHandler
-    def initialize(lizard)
-      @lizard=lizard
-      super
-    end
-    def receive_data data
-      error=nil
-      begin
-        # {monitor: 'sagepay', target_status: 'run'}
-        j=JSON.parse data
-        if m=j["monitor"] then
-          monitor=@lizard.find_monitor_by_name(m)
-          if monitor 
-            if s=j['target_status'] then
-              monitor.target_status s.to_sym
-            end
-          else
-            error="no such monitor #{m}"
-          end
-        end
-        unless error then
-          send_data (if monitor then monitor.as_json else @lizard.all.values.map(&:as_json) end).to_json
-          return
-        end
-      rescue JSON::ParserError =>e
-        error=e.inspect
-      end
-      send_data ({error: e.inspect}).to_json 
-    end
-  end
-  module Syslog 
-    def initialize(host,port)
-      @host=host; @port=port
-    end
-    def send_message(facility,priority,content,tag="lizard")
-      # per http://www.faqs.org/rfcs/rfc3164.html
-      @hostname||=Socket.gethostname.split(".").first
-      f=[:kernel,:user,:mail,:daemon,:auth,:syslog,
-         :lpr,:news,:uucp,:cron,:authpriv,:ftp,
-         12,13,14,15,
-         :local0,:local1,:local2,:local3,
-         :local4,:local5,:local6,:local7].index(facility)
-      p=[:emerg,:alert,:crit,:err,
-         :warning,:notice,:info,:debug].index(priority)
-      raise "facility #{facility} unrecognized" unless f
-      raise "priority #{priority} unrecognized" unless p
-      timestamp=Time.now.strftime("%b %_m %H:%M:%S")
-      payload=sprintf("<%d>",(f << 3)|p)+
-        "#{timestamp} #{@hostname} #{tag}:#{content}"
-      send_datagram payload[0..1023],@host,@port
-    end
-  end                 
+require 'lizard/signal_handler'
+require 'lizard/command_handler'
+require 'lizard/syslog'
 
+class Lizard
   # pathname for unix-domain control socket 
   attr_accessor :command_socket
   # hostname:port of the syslog server that we should send all messages
