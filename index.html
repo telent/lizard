@@ -1,0 +1,146 @@
+<style>
+.hll { background-color: #ffffcc }
+.c { color: #408080; font-style: italic } /* Comment */
+.err { border: 1px solid #FF0000 } /* Error */
+.k { color: #008000; font-weight: bold } /* Keyword */
+.o { color: #666666 } /* Operator */
+.cm { color: #408080; font-style: italic } /* Comment.Multiline */
+.cp { color: #BC7A00 } /* Comment.Preproc */
+.c1 { color: #408080; font-style: italic } /* Comment.Single */
+.cs { color: #408080; font-style: italic } /* Comment.Special */
+.gd { color: #A00000 } /* Generic.Deleted */
+.ge { font-style: italic } /* Generic.Emph */
+.gr { color: #FF0000 } /* Generic.Error */
+.gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.gi { color: #00A000 } /* Generic.Inserted */
+.go { color: #808080 } /* Generic.Output */
+.gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.gs { font-weight: bold } /* Generic.Strong */
+.gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.gt { color: #0040D0 } /* Generic.Traceback */
+.kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.kp { color: #008000 } /* Keyword.Pseudo */
+.kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.kt { color: #B00040 } /* Keyword.Type */
+.m { color: #666666 } /* Literal.Number */
+.s { color: #BA2121 } /* Literal.String */
+.na { color: #7D9029 } /* Name.Attribute */
+.nb { color: #008000 } /* Name.Builtin */
+.nc { color: #0000FF; font-weight: bold } /* Name.Class */
+.no { color: #880000 } /* Name.Constant */
+.nd { color: #AA22FF } /* Name.Decorator */
+.ni { color: #999999; font-weight: bold } /* Name.Entity */
+.ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+.nf { color: #0000FF } /* Name.Function */
+.nl { color: #A0A000 } /* Name.Label */
+.nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+.nt { color: #008000; font-weight: bold } /* Name.Tag */
+.nv { color: #19177C } /* Name.Variable */
+.ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+.w { color: #bbbbbb } /* Text.Whitespace */
+.mf { color: #666666 } /* Literal.Number.Float */
+.mh { color: #666666 } /* Literal.Number.Hex */
+.mi { color: #666666 } /* Literal.Number.Integer */
+.mo { color: #666666 } /* Literal.Number.Oct */
+.sb { color: #BA2121 } /* Literal.String.Backtick */
+.sc { color: #BA2121 } /* Literal.String.Char */
+.sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.s2 { color: #BA2121 } /* Literal.String.Double */
+.se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+.sh { color: #BA2121 } /* Literal.String.Heredoc */
+.si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+.sx { color: #008000 } /* Literal.String.Other */
+.sr { color: #BB6688 } /* Literal.String.Regex */
+.s1 { color: #BA2121 } /* Literal.String.Single */
+.ss { color: #19177C } /* Literal.String.Symbol */
+.bp { color: #008000 } /* Name.Builtin.Pseudo */
+.vc { color: #19177C } /* Name.Variable.Class */
+.vg { color: #19177C } /* Name.Variable.Global */
+.vi { color: #19177C } /* Name.Variable.Instance */
+.il { color: #666666 } /* Literal.Number.Integer.Long */
+
+pre { padding: 10px;  background-color: #eee; }
+body { margin: 0 1em 0 2em ; font-family: Helvetica }
+
+</style>
+
+<h1 id="lizard">Lizard</h1>
+<p><strong>Lizard</strong> is a process/service monitor designed for starting, stopping, restarting, and tracking the state services on Unixoid systems. It is primarily designed for &quot;application&quot; services (web apps, queue runners, RPC services, etc) and is not intended as a general-purpose init replacement.</p>
+<ul>
+<li><p>It uses a Ruby DSL for describing the services and processes to start and how to monitor them.</p></li>
+<li><p>You can test services by polling them periodically. Your polling code has the full power of Ruby available to it (as long as it doesn't block on IO) and is called with an array argument that stores historical values - so you can tolerate glitches in availability, or implement hysteresis or weighted averages on continous variables. For example, load averages, temperatures, service response times.</p></li>
+<li><p>Standard output and error streams from monitored processes is captured and sent to syslog (with per-process configurable facility and priority) to make diagnosis easier when processes fail to start</p></li>
+<li><p>It is implemented using EventMachine</p></li>
+<li><p>Service alert notifications by email are currently implemented. The notification structure is extensible, so if you have an API to e.g. a pager or an SMS service or a chatroom you can easily tell Lizard to talk to it</p></li>
+</ul>
+<h2 id="example">Example</h2>
+<div class="highlight"><pre><span class="nb">require</span> <span class="s1">&#39;lizard&#39;</span>
+
+<span class="c1"># Instantiate the overall controller</span>
+
+<span class="n">lizard</span><span class="o">=</span><span class="no">Lizard</span><span class="o">.</span><span class="n">new</span> <span class="ss">:syslog_server</span><span class="o">=&gt;</span><span class="s2">&quot;localhost:514&quot;</span><span class="p">,</span> <span class="c1"># this is default</span>
+<span class="ss">:command_socket</span><span class="o">=&gt;</span><span class="s2">&quot;/var/run/lizard.socket&quot;</span><span class="p">,</span> <span class="c1"># for controlling a running Lizard</span>
+<span class="ss">:mail</span><span class="o">=&gt;</span><span class="p">{</span>
+  <span class="c1"># If you want Lizard to send mail, you must tell it how.</span>
+  <span class="c1"># :mail specifies global mail settings such as mailhost, port number,</span>
+  <span class="c1"># TLS and auth configuration.  The allowable options are as for</span>
+  <span class="c1"># EventMachine::Protocols::SmtpClient</span>
+  <span class="n">host</span><span class="p">:</span> <span class="s2">&quot;btyemark.telent.net&quot;</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="s2">&quot;4a.telent.net&quot;</span><span class="p">,</span>
+  <span class="n">to</span><span class="p">:</span> <span class="s2">&quot;root@telent.net&quot;</span><span class="p">,</span> <span class="n">from</span><span class="p">:</span> <span class="s2">&quot;root@stargreen.com&quot;</span>
+<span class="p">}</span>
+<span class="c1"># :notifications specifies _defaults_ for all forms of notification.</span>
+<span class="c1"># In the case of email that would be things like sender/recipient address</span>
+<span class="c1"># etc that can meaningfully be overridden by individual monitors</span>
+
+<span class="c1"># Add monitors for each service to control  </span>
+
+<span class="n">lizard</span><span class="o">.</span><span class="n">add</span> <span class="no">Process</span><span class="p">,</span><span class="s1">&#39;iostat&#39;</span> <span class="k">do</span> 
+  <span class="c1"># username to run as</span>
+  <span class="n">user</span> <span class="s1">&#39;stargreen&#39;</span> 
+  <span class="c1"># how to start this process</span>
+  <span class="n">start</span> <span class="s1">&#39;iostat 3&#39;</span> 
+  <span class="c1"># whether to start this process?  Set to :stop to disable</span>
+  <span class="n">target_status</span> <span class="ss">:run</span>
+
+  <span class="c1"># logging is via syslog</span>
+  <span class="n">log</span> <span class="n">stderr</span><span class="p">:</span> <span class="p">{</span><span class="n">facility</span><span class="p">:</span> <span class="ss">:user</span><span class="p">,</span> <span class="n">priority</span><span class="p">:</span> <span class="ss">:warning</span><span class="p">}</span>
+  <span class="n">log</span> <span class="n">stdout</span><span class="p">:</span> <span class="p">{</span><span class="n">facility</span><span class="p">:</span> <span class="ss">:user</span><span class="p">,</span> <span class="n">priority</span><span class="p">:</span> <span class="ss">:debug</span><span class="p">}</span>
+
+  <span class="n">poll</span> <span class="n">interval</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="n">keep</span><span class="p">:</span> <span class="mi">5</span> <span class="k">do</span> <span class="o">|</span><span class="n">results</span><span class="o">|</span>
+<span class="c1">#    http_get &#39;http://www.google.com&#39;, warn: 1, timeout: 5 do </span>
+<span class="c1">#      results &lt;&lt; ((r.status==200) &amp;&amp; r.elapsed)</span>
+<span class="c1">#    end</span>
+    <span class="c1"># this is clearly an example.  Imagine that rand*2 is instead </span>
+    <span class="c1"># measuring something useful about the service being checked</span>
+    <span class="n">results</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="o">*</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">c</span><span class="o">=</span><span class="n">results</span><span class="o">.</span><span class="n">compact</span><span class="o">.</span><span class="n">count</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span> <span class="k">then</span>
+      <span class="n">notify</span> <span class="s2">&quot;connection flakey </span><span class="si">#{</span><span class="n">c</span><span class="si">}</span><span class="s2">/5&quot;</span><span class="p">,</span><span class="n">results</span>
+    <span class="k">end</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">results</span><span class="o">.</span><span class="n">average</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">then</span>
+      <span class="n">notify</span> <span class="s2">&quot;connection slow </span><span class="si">#{</span><span class="n">a</span><span class="si">}</span><span class="s2"> avg&quot;</span><span class="p">,</span><span class="n">results</span>
+      <span class="n">restart_service</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c1"># where to send notifications when something calls #notify.  This is</span>
+  <span class="c1"># in addition to the default notifications list maintained in the</span>
+  <span class="c1"># Lizard object</span>
+  <span class="n">notification</span> <span class="ss">:mail</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="n">to</span><span class="p">:</span> <span class="s2">&quot;dan@telent.net&quot;</span><span class="p">,</span> 
+    <span class="c1"># subject: &quot;Lizard alert&quot;, # subject line defaults to something sane</span>
+    <span class="c1"># from: &quot;lizard@telent.net&quot; # usually set globally</span>
+  <span class="p">}</span>
+<span class="k">end</span>
+
+<span class="n">lizard</span><span class="o">.</span><span class="n">start_watch</span>
+</pre></div>
+
+
+
+
+
+
+
+
