@@ -3,7 +3,7 @@ require 'lizard'
 # Instantiate the overall controller
 
 lizard=Lizard.new :syslog_server=>"localhost:514", # this is default
-:command_socket=>"/var/run/lizard.socket", # for controlling a running Lizard
+:command_socket=>"/tmp/lizard.socket", # for controlling a running Lizard
 :mail=>{
   # If you want Lizard to send mail, you must tell it how.
   # :mail specifies global mail settings such as mailhost, port number,

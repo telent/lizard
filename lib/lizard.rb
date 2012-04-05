@@ -1,7 +1,3 @@
-# # Lizard
-#
-
-
 require 'eventmachine'
 require 'json'
 require 'socket' # for Socket.gethostname
