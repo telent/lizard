@@ -1,5 +1,6 @@
 # Let it never be said/that romance is dead / -*- Ruby -*- Ruby Ruby Ruby!
 
+# unused
 desc "generate FFI structs"
 task :ffi_generate do
   require 'ffi'
@@ -17,17 +18,13 @@ task :ffi_generate do
   end
 end
 
+# out of date
 task :test do
   sh (["ruby","-Ilib","-rminitest/autorun","-rlizard","-rpp"]+
     Dir.glob("test/*.test.rb")).join(" ")
 end
 
+# useful
 task :doc do
   sh "erb doc/lizard.md.erb |pandoc -o index.html -"
-end
-
-task :push do
-  sh "git push"
-  sh "git checkout gh-pages && git commit -m 'regenerated' index.html && git push -f"
-  sh "git checkout master"
 end
