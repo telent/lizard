@@ -2,7 +2,6 @@
 <%= IO.popen("pygmentize -S default -f html").read %>
 pre { padding: 10px;  background-color: #eee; }
 body { margin: 0 1em 0 2em ; font-family: Helvetica }
-
 </style>
 
 # Lizard
@@ -37,8 +36,4 @@ talk to it
 ## Example
 
 <%= IO.popen("pygmentize -f html example/stargreen.rb").read %>
-
-
-
-
 

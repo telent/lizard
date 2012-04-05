@@ -26,5 +26,5 @@ end
 
 # useful
 task :doc do
-  sh "erb doc/lizard.md.erb |pandoc -o index.html -"
+  sh "erb doc/lizard.md.erb |pandoc -o doc/index.html -"
 end
