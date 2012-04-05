@@ -21,3 +21,7 @@ task :test do
   sh (["ruby","-Ilib","-rminitest/autorun","-rlizard","-rpp"]+
     Dir.glob("test/*.test.rb")).join(" ")
 end
+
+task :doc do
+  sh "erb README.md.erb |pandoc -o README.html -"
+end
