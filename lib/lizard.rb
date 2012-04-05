@@ -71,7 +71,7 @@ class Lizard
   end
 
   # Start the world
-  def start_watch
+  def start
     EM.run do
       @signal_pipe=IO.pipe
       Signal.trap("CHLD") do 
@@ -81,19 +81,19 @@ class Lizard
       EM.start_unix_domain_server self.command_socket,CommandHandler,self
       host,port=@syslog_server.split(/:/)
       @syslog_socket=EM.open_datagram_socket host,0,Lizard::Syslog,host,port
-
-      @monitors.values.each do |l| l.make_it_so end
+      @monitors.values.each do |l| l.sync_with_config end
     end   
   end
 
   # Stop the world, get off.
-  def stop_watch
-    @monitors.each do |l| l.target_status=:stop end
-    if @monitors.find {|m| [:run,:stopping].include?(m.status) }  then
+  def stop
+    @monitors.each do |l| l.config[:enable]=false; l.sync_with_config end
+    if @monitors.find {|m| m.status }  then
       # wait for stop
       warn "waiting for services to stop"
-      EM.add_timer 1, proc { self.stop_watch }
+      EM.add_timer 1, proc { self.stop }
       return
+
     end
     EM.stop
     if f=@signal_pipe then f[0].close;  f[1].close ; end

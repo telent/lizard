@@ -18,17 +18,6 @@ what exactly
 Perhaps there is a better way to generate emails than by embedding
 text in the source code files.  ERB is the obvious go-to tool
 
-# dsl
-
-it might be nice to instance_eval the dsl code in a different context
-than the monitor itself, as it's currently not at all obvious which
-methods are for the dsl and which actually do stuff (e.g. log vs
-syslog, start vs start_service)
-
-# dsl/attributes
-
-That weird '@attributes' thing is really not getting used much
-
 # monitor/filesystem
 
 Implement this to the extent that it actually knows how to check 

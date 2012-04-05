@@ -1,8 +1,20 @@
 require 'ostruct'
+require 'lizard/config'
+require 'pp'
 
 class Lizard::Monitor
-  class Poll < OpenStruct; end
-  attr_reader :name,:check
+  class Poll < OpenStruct ;end
+  class Config < Lizard::Config
+    hash :log
+    list :notification
+    scalar :enable
+    def poll args,&blk
+      @values[:poll] ||=[]
+      @values[:poll] << Poll.new({proc: blk}.merge(args))
+    end
+  end
+
+  attr_reader :name
   attr_accessor :lizard
   
   def as_json
@@ -11,36 +23,18 @@ class Lizard::Monitor
 
   def initialize name,&blk
     @name=name
-    @log={}
-    @polls=[]
-    @notifications=[]
-    @attributes=Hash.new {|h,k| h[k]=[] }
+    @config=self.class.const_get("Config").new
     # implicit self, because users are expected to be dsl-use-heavy and 
     # ruby-light
     # http://blog.grayproductions.net/articles/dsl_block_styles
-    instance_eval &blk
-  end
-  def []=(k,v)
-    @attributes[k] << v
-  end
-  def [](k)
-    @attributes[k] 
-  end
-  def log params
-    @log=@log.merge(params)
-  end
-  def notification n
-    @notifications << n
+    @config.send(:instance_eval,&blk)
   end
   def tag
     @name
   end
   def syslog(stream,message)
-    a=@log[stream]
+    a=@config[:log][stream] or raise "no stream #{stream}"
     @lizard.syslog a[:facility],a[:priority],message,self.tag
-  end
-  def poll(args,&blk)
-    @polls << Poll.new(args.merge({proc: blk}))
   end
   class FixedLengthArray < Array
     # A subclass of Array which drops earlier elements when more are added.
@@ -68,38 +62,49 @@ class Lizard::Monitor
       end
     end
   end
-  # Start the monitor and (where meaningful) the service it monitors.
-  def start_service
+
+  def enable!
     # call EM.add_periodic_timer for each poll, according to that poll's
     # interval. 
     monitor=self
-    @polls.each do |poll|
+    @config[:poll].each do |poll|
       poll.results=FixedLengthArray.new(poll.keep)
       poll.timer=EM.add_periodic_timer(poll.interval) {
-        self.instance_eval do
-          poll.proc.call(poll.results)
-        end
+        monitor.instance_exec(poll.results,&poll.proc)
       }
     end
+    start_service
+    @enabled=true
   end
 
-  # Stop the monitor and the services it watches
-  def stop_service
-    @polls.each do |poll|
+  # Stop the monitor
+  def disable!
+    @enabled=false
+    stop_service
+    @config[:poll].each do |poll|
       poll.timer.cancel
     end
   end
 
-  # Go on, guess what this does
-  def restart_service
-    self.stop_service and self.start_service
+  # subclasses may implement these if the service is something that
+  # can be started/stopped under our control
+  def start_service
+  end
+  def stop_service
+  end
+
+  def sync_with_config
+    wanted=@config[:enable]
+    if wanted != @enabled then
+      if wanted then enable! else disable! end
+    end
   end
 
   # #notify is called from #poll body clauses to send emails/texts/pages/
-  # whatever form of notifucation is specified for this monitor by its
+  # whatever form of notification is specified for this monitor by its
   # #notification clause(s)
   def notify(*message)
-    @notifications.each do |n|
+    @config[:notification].each do |n|
       method,defaults=Array(n).first
       c=Lizard::Notification.const_get(method.to_s.capitalize)
       defaults=(@lizard.notifications[method] || {}).merge(defaults)
@@ -107,5 +112,5 @@ class Lizard::Monitor
       o.send!
     end
   end
-
+    
 end

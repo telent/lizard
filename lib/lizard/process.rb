@@ -27,31 +27,20 @@ class Lizard::Process < Lizard::Service
     end
   end
 
+  class Config < Lizard::Monitor::Config
+    scalar :user
+    scalar :start
+    scalar :stop
+  end
+
   def initialize (*args)
     @child_pid=-1
     super
   end
 
-  [:user,:start,:stop,:pidfile].each do |meth|
-    define_method meth do |v|
-      @attributes[meth] = v
-    end
-  end
   attr_reader :child_pid
-  def status
-    p=@child_pid
-    s=if p && (p>0) && ::Process.exists?(p) then
-        :run 
-      else
-        :stop
-      end
-    if s==:run then
-      super
-    end
-  end
 
   def start_service
-    @status=:starting
     @stdout = IO.pipe
     @stderr = IO.pipe
     EM.attach @stdout[0],LogfileHandler,self,:stdout
@@ -62,12 +51,11 @@ class Lizard::Process < Lizard::Service
       $stdin.reopen("/dev/null","r")
       $stdout.reopen(@stdout[1])
       $stderr.reopen(@stderr[1])
-      Kernel.exec(self[:start])
+      Kernel.exec(@config[:start])
     end
-    syslog :stderr, "started #{@child_pid}"
+    syslog :stderr, "started #{@child_pid} with #{@config[:start]}"
     @stdout[1].close
     @stderr[1].close    
-    super
   end
   def stop_service
     syslog :stderr, "stopping #{@child_pid} by command"
@@ -77,15 +65,26 @@ class Lizard::Process < Lizard::Service
       return false;
     end
     if @child_pid>0 then Process.kill(15,@child_pid) end
-    super
   end
 
   def child_exited(pid)
     syslog :stderr, "#{@child_pid} exited (or detached?)"
     @child_pid=-1
-    self.make_it_so
+    # as long as the service is enabled, try to bring it back up
+    # XXX there may be a case for making this configurable, e.g.
+    # poll :event=>:exit, count: 5 do |r| 
+    #   # called each time a child dies
+    #   r << Time.now  
+    #   if r[0]< Time.now-5 then restart 
+    #   else notify "disabled due to too many respawns", r
+    #   end
+    # end
+    @config[:enabled] and start_service
   end
+
   def stream_closed(name)
+    # this is for information only: a child may close its streams
+    # and continue to run
     syslog :stderr, "#{@child_pid} #{name} stream was closed"
   end
 
@@ -120,10 +119,4 @@ class Lizard::Process < Lizard::Service
     @name+"["+@child_pid.to_s+"]"
   end
   
-  def stop_watch
-    #@stdout[0].close these are already closed?
-    #@stderr[0].close
-  end
 end
-
-    

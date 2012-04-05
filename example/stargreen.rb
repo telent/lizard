@@ -23,8 +23,8 @@ lizard.add Process,'iostat' do
   user 'stargreen' 
   # how to start this process
   start 'iostat 3' 
-  # whether to start this process?  Set to :stop to disable
-  target_status :run
+  # whether to start this process
+  enable true
 
   # logging is via syslog
   log stderr: {facility: :user, priority: :warning}
@@ -42,7 +42,7 @@ lizard.add Process,'iostat' do
     end
     if (a=results.average) > 1 then
       notify "connection slow #{a} avg",results
-      restart_service
+      restart
     end
   end
   
@@ -56,5 +56,7 @@ lizard.add Process,'iostat' do
   }
 end
 
-lizard.start_watch
+#require 'pp'
+#PP.pp lizard.all
 
+lizard.start
