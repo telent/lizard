@@ -24,7 +24,9 @@ possible problem.  The message is
 
   #{@message.join("\n")}
 
-Yours in lizarditude
+Anguimorphically yours
+
+  - The Lizard
 }
     end
 
