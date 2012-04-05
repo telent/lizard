@@ -24,10 +24,25 @@ Implement this to the extent that it actually knows how to check
 filesystem free space (shell out to df: calling statvfs() from Ruby is 
 too much like pain)
 
+# monitor/process
+
+setuid!
+
+# monitor/process/died
+
+Make the respawn-on-exit behaviour configurable, e.g.
+poll :event=>:exit, count: 5 do |r| 
+  # called each time a child dies
+  r << Time.now  
+  if r[0]< Time.now-5 then restart 
+  else notify "disabled due to too many respawns", r
+  end
+end
+
 # poll
 
 some useful and terse functionality for e.g. checking uptime of web
-services would bd very useful in writing poll blocks
+services would be very useful in writing poll blocks
 
 # remote
 
