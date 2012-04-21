@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   ["eventmachine"].each do |gem|
     s.add_runtime_dependency gem
   end
-  ["rake", "pry"].each do |gem|
+  ["rake", "rr", "pry"].each do |gem|
     s.add_development_dependency gem
   end
 
