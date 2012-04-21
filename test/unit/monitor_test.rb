@@ -83,6 +83,16 @@ describe Lizard::Monitor do
       assert_equal out,[[:dan,"message 1"],
                         [:root,"message 2"]]
     end
+    it "alert also accepts a block" do
+      out=[]
+      m=Class.new(Lizard::Monitor) do
+        alert :dan do |msg|
+          out << [:dan,msg] 
+        end
+      end.new
+      m.alert :dan,"message 1"
+      assert_equal out,[[:dan,"message 1"]]
+    end
   end
 end
 
