@@ -12,6 +12,10 @@ class Lizard::Monitor
       @clisteners||=[]
       @clisteners << {event => blk}
     end
+    def alert(name,proc=nil,&blk)
+      @alerts||=[]
+      @alerts << {name=>(if block_given? then blk else proc end) }
+    end
   end
   
   attr_reader :listeners
@@ -27,8 +31,25 @@ class Lizard::Monitor
     end    
   end
 
+  def init_alerts(clss=self.class)
+    @alerts ||= Hash.new {|h,k| h[k]=[] }
+    v=clss.instance_variable_get(:@alerts) 
+    v and v.each do |a|
+      k,v=a.first
+      @alerts[k] << v
+    end
+    if (sup=clss.superclass) 
+      init_alerts sup
+    end    
+  end
+  
+  def alert(name,message)
+    @alerts[name].map{|a| a.call(message) }
+  end
+
   def initialize
     init_listeners
+    init_alerts
   end
 
   def notify event

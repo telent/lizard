@@ -69,6 +69,21 @@ describe Lizard::Monitor do
       assert_equal called.sort, [:m,:m,:m2].sort
     end
   end
+
+  describe "alerts" do
+    it "collects alerts" do
+      out=[]
+      m=Class.new(Lizard::Monitor) do
+        alert :dan, Proc.new {|msg| out << [:dan,msg] }
+        alert :root, Proc.new {|msg| out << [:root,msg] }
+      end.new
+      m.alert :dan,"message 1"
+      assert_equal out,[[:dan,"message 1"]]
+      m.alert :root,"message 2"
+      assert_equal out,[[:dan,"message 1"],
+                        [:root,"message 2"]]
+    end
+  end
 end
 
     
