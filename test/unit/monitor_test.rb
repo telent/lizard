@@ -50,6 +50,24 @@ describe Lizard::Monitor do
       m2.listeners[:enable].map(&:call)
       assert_equal 2, succeeded
     end
+    it "#notify invokes the handlers" do
+      called=[]
+      m=Class.new(Lizard::Monitor) do
+        listen :enable do
+          called << :m
+        end
+        listen :enable do
+          called << :m
+        end
+      end
+      m2=Class.new(m) do
+        listen :enable do
+          called << :m2
+        end
+      end
+      m2.new.notify :enable
+      assert_equal called.sort, [:m,:m,:m2].sort
+    end
   end
 end
 

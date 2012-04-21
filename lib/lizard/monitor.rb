@@ -31,4 +31,10 @@ class Lizard::Monitor
     init_listeners
   end
 
+  def notify event
+    @listeners[event].each do |l|
+      l.call
+    end
+  end
+
 end
