@@ -34,6 +34,22 @@ describe Lizard::Monitor do
       m2.listeners[:enable].map(&:call)
       assert succeeded
     end
+    it "inherited and direct handlers both work" do
+      succeeded=0
+      m=Class.new(Lizard::Monitor) do
+        listen :enable do
+          succeeded+=1
+        end
+      end
+      m2=Class.new(m) do
+        listen :enable do
+          succeeded+=1
+        end
+      end.new
+      assert_equal 2, m2.listeners[:enable].length
+      m2.listeners[:enable].map(&:call)
+      assert_equal 2, succeeded
+    end
   end
 end
 

@@ -9,16 +9,20 @@ class Lizard::Monitor
       end
     end
     def listen(event,&blk)
-      @clisteners||=Hash.new {|h,k| h[k]=[] }
-      @clisteners[event] << blk
+      @clisteners||=[]
+      @clisteners << {event => blk}
     end
   end
   
   attr_reader :listeners
   def init_listeners(clss=self.class)
-    @listeners ||= {}
-    @listeners=@listeners.merge(clss.instance_variable_get(:@clisteners) ||{})
-    if (sup=clss.superclass) != Object
+    @listeners ||= Hash.new {|h,k| h[k]=[] }
+    v=clss.instance_variable_get(:@clisteners) 
+    v and v.each do |a|
+      k,v=a.first
+      @listeners[k] << v
+    end
+    if (sup=clss.superclass) 
       init_listeners sup
     end    
   end
