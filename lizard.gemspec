@@ -1,11 +1,11 @@
 
 require './lib/lizard/version'
 base=Lizard::VERSION
-Version=base+"."+`git rev-list HEAD '^release_#{base.split(".").join("_")}'|wc -l`
+version=base+"."+`git rev-list HEAD '^release_#{base.split(".").join("_")}'|wc -l`
 
 Gem::Specification.new do |s|
   s.name    = 'lizard'
-  s.version = Version
+  s.version = version
   s.date    = Date.today.to_s
   
   s.summary = "Process/service monitor for Ruby developers on Unix"
