@@ -105,13 +105,15 @@ describe Lizard::Monitor do
         end
         collect :fiftyhz, :class=> v
         listen :tick do
-          i||=0
-          p = Math::sin(i * Math::PI/36)
+          @i||=0
+          p = Math::sin(@i * Math::PI/36)
           self.collection[:fiftyhz] << p
-          i+=1
+          @i+=1
         end
       end.new
       10.times do |i| m.notify :tick end
+      assert_equal 10,m.collection[:fiftyhz].length
+      assert_in_delta 3.70773, m.collection[:fiftyhz].reduce(:+)
     end
   end
 end
