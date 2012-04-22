@@ -14,4 +14,7 @@ class Lizard::Monitor::Process < Lizard::Monitor
   listen :enable do
     start
   end  
+  listen :disable do
+    stop
+  end  
 end

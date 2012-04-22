@@ -23,4 +23,10 @@ describe Lizard::Monitor::Process do
     @m.notify :enable
     assert @started
   end
+  it "stops when :disable received" do
+    @m.notify :enable
+    assert @started
+    @m.notify :disable
+    refute @started
+  end
 end
