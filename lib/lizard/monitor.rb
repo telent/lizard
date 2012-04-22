@@ -16,6 +16,11 @@ class Lizard::Monitor
       @alerts||=[]
       @alerts << {name=>(if block_given? then blk else proc end) }
     end
+    def collect name, options
+      clss=options.delete(:class)
+      @collections||=[]
+      @collections << {name => clss.new(options) }
+    end
   end
   
   attr_reader :listeners
@@ -42,6 +47,20 @@ class Lizard::Monitor
       init_alerts sup
     end    
   end
+
+  attr_reader :collection
+  def init_collections(clss=self.class)
+    @collection ||= Hash.new {|h,k| h[k]=[] }
+    v=clss.instance_variable_get(:@collections) 
+    v and v.each do |a|
+      k,v=a.first
+      # subclasses override superclass
+      @collection[k] ||= v
+    end
+    if (sup=clss.superclass) 
+      init_collections sup
+    end    
+  end
   
   def alert(name,message)
     @alerts[name].map{|a| a.call(message) }
@@ -50,11 +69,18 @@ class Lizard::Monitor
   def initialize
     init_listeners
     init_alerts
+    init_collections
+    # with anonymous classes it sometimes gets hard to guess whether
+    # "warn foo" is showing you a class or an instance.  This ivar
+    # exists solely to help debugging
+    @instance=true 
   end
 
   def notify event
     @listeners[event].each do |l|
-      l.call
+      #  needs to be instance_eval or something to ensure
+      # "this" is the instance
+      instance_eval &l
     end
   end
 

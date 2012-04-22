@@ -94,6 +94,26 @@ describe Lizard::Monitor do
       assert_equal out,[[:dan,"message 1"]]
     end
   end
+
+  describe "collect" do
+    it "::collect creates a time-series collection (e.g. for metrics)" do
+      m=Class.new(Lizard::Monitor) do
+        v=Class.new(Array) do
+          def initialize(hash)
+            super()
+          end
+        end
+        collect :fiftyhz, :class=> v
+        listen :tick do
+          i||=0
+          p = Math::sin(i * Math::PI/36)
+          self.collection[:fiftyhz] << p
+          i+=1
+        end
+      end.new
+      10.times do |i| m.notify :tick end
+    end
+  end
 end
 
     
