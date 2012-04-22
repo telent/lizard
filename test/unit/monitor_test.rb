@@ -107,7 +107,7 @@ describe Lizard::Monitor do
         listen :tick do
           @i||=0
           p = Math::sin(@i * Math::PI/36)
-          self.collection[:fiftyhz] << p
+          collection[:fiftyhz] << p
           @i+=1
         end
       end.new
