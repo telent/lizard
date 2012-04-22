@@ -29,4 +29,9 @@ describe Lizard::Monitor::Process do
     @m.notify :disable
     refute @started
   end
+  it "restarts when sent :process_died event"
+  it "doesn't restart if health: fail"
+  it "sets health: warn if child dies more than three times in a minute"
+  it "sets health: fail if child dies more than six times in a minute"
+  it "resets health status on receiving external :reset event"
 end
