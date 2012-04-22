@@ -1,5 +1,11 @@
 # Lizard
 
+*Lizard is being completely rewritten in a test-driven style now that
+I actually know what I want it to do.  This README is from the
+previously implemented spike (available in the old-master branch) and
+may not correspond to either current or future reality in every
+respect*
+
 **Lizard** is a process/service monitor designed for starting,
 stopping, restarting, and tracking the state of services on Unixoid
 systems. It is primarily designed for "application" services (web
