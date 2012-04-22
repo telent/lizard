@@ -1,0 +1,56 @@
+A Monitor has 
+
+ attribute :enabled (true or false) which says whether the admin
+ *wants* it to be up
+
+ attribute :health which takes some value denoting whether it is actually
+ up, or is flakey, or is down, or has unknown status
+
+Monitors listen for Events, which may be things like :enable or
+:disable or :child_exited.  Event handlers are defined using the
+'listen' class method.  Event handlers may also signal events of their own, 
+or may raise Alerts
+
+Monitors may also invoke code periodically using the 'every' class
+method.  These timed handlers can poll for service status, signal events, 
+send alerts etc just as signal handlers can
+
+Alerts notify people that something has happened.  Alerts applicable
+to a given monitor are named using the ::alert class method and then
+created using the #alert instance method.  An Alert accepts an
+argument which is the message to send, and should have a #call method
+which sends it (think about this: we would be better to have the 
+class methods specify the message and the instance method merely sends it)
+
+Alert can be subclassed for alerting people by email or by sms or
+jabber or whatever
+
+Collections are data structures for collecting historical data:
+e.g. we might monitor service response time every minute and notify
+flakey helth if it consisyently exceedsa a threshold, or we might
+collect a timestamp every time a process restarts and use it to
+trigger an alert if it dies too frequently. A collection is specified
+with a maximum age, and discards collected values exceeding that age.
+
+Collections are named using the class method ::collect.  To add a
+value to a collection, in a handler, use the <<  method
+
+There are some handy methods on collections to do things like
+averages, exponential time-weighted averages, and suchlike so we can
+make decisions on the data in them.
+
+A Process is a subclass of Monitor which includes a child process
+under the control of Lizard.  It has attributes :running and :pid.
+The class methods ::start and ::stop define how it is started and
+stopped
+
+Output and error streams from child processes are captured using the
+::log class method, with which they can be monitored for particular
+messages (which may signal events, send alerts, the usual drill) or sent
+onto somewhere else (by default, syslog)
+
+    log :stdout, Syslogger.new(facility: :local1, priority: :debug) do |l|
+      if l.match /FATAL/ then signal :dead end
+    end
+
+
