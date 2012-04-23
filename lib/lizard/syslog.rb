@@ -5,11 +5,13 @@ module Lizard::Syslog
     def initialize(args)
       @host=args[:host] || "localhost"
       @port=args[:port] || 514
+      # XXX install ourselves into eventmachine
     end
     def new_stream(args)
-      Lizard::Syslog::Stream.new args.merge({server: this})
+      Lizard::Syslog::Stream.new args.merge({server: self})
     end
     def write(data)
+      # XXX do something with eventmachine
     end
   end
 
