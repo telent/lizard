@@ -22,7 +22,15 @@ class Lizard::Monitor
       @collections << {name => clss.new(options) }
     end
   end
+
   
+  # Should this service be monitored?  truthy or falsey
+  attr_reader :enable
+
+  # Attribute denotes whether it is actually up, or is flakey, or is
+  # down, or has unknown status.  Values TBD
+  attr_reader :health
+
   attr_reader :listeners
   def init_listeners(clss=self.class)
     @listeners ||= Hash.new {|h,k| h[k]=[] }

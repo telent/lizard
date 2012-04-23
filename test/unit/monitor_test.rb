@@ -9,6 +9,15 @@ describe Lizard::Monitor do
     assert_equal "anguimorph",m.new.name 
     assert_equal "anguimorph",m2.new.name 
   end
+
+  describe "attributes" do
+    [:enable,:health].each do |a|
+      it "has #{a} attribute" do
+        assert Lizard::Monitor.new.respond_to?(a) 
+      end
+    end
+  end
+    
       
   describe "events" do
     it "#listen registers an event handler" do
