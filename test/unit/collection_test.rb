@@ -24,4 +24,6 @@ describe Lizard::Collection do
     @c.add(2,Time.now-80)
     assert_equal 1,@c.length
   end
+  it "#average returns the average value" 
+  it "#moving_average returns the exponentially decaying weighted moving average"
 end
