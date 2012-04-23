@@ -18,7 +18,6 @@ describe Lizard::Monitor do
     end
   end
     
-      
   describe "events" do
     it "#listen registers an event handler" do
       succeeded=nil
@@ -78,6 +77,25 @@ describe Lizard::Monitor do
       assert_equal called.sort, [:m,:m,:m2].sort
     end
   end
+
+  describe "timed code" do
+    it "::every defines a code block which is called periodically" do
+      coll=[]
+      class FakePeriodicTimer 
+        def initialize(interval,code)
+          @@f=code; @@int=interval
+        end
+      end
+      m=Class.new(Lizard::Monitor) do
+        every 10 do
+          coll << self
+        end
+      end.new(:periodic_timer=>FakePeriodicTimer)
+      assert_equal 10,FakePeriodicTimer.send(:class_variable_get,:@@int)
+      FakePeriodicTimer.send(:class_variable_get,:@@f).call
+      assert_equal m,coll[0]
+    end
+  end    
 
   describe "alerts" do
     it "collects alerts" do

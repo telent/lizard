@@ -12,6 +12,10 @@ class Lizard::Monitor
       @clisteners||=[]
       @clisteners << {event => blk}
     end
+    def every(interval,&blk)
+      @timers ||=[]
+      @timers << {interval=> blk}
+    end
     def alert(name,proc=nil,&blk)
       @alerts||=[]
       @alerts << {name=>(if block_given? then blk else proc end) }
@@ -56,6 +60,21 @@ class Lizard::Monitor
     end    
   end
 
+  def init_timers(clss=self.class)
+    v=clss.instance_variable_get(:@timers) 
+    v and v.each do |a|
+      k,v=a.first
+      v1=Proc.new do
+        self.instance_eval &v
+      end
+      (@periodic_timer || 
+       Kernel.const_get("EventMachine").const_get("PeriodicTimer")).new(k, v1)
+    end
+    if (sup=clss.superclass) 
+      init_timers sup
+    end    
+  end
+
   attr_reader :collection
   def init_collections(clss=self.class)
     @collection ||= Hash.new {|h,k| h[k]=[] }
@@ -74,10 +93,17 @@ class Lizard::Monitor
     @alerts[name].map{|a| a.call(message) }
   end
 
-  def initialize
+  attr_reader :periodic_timer
+
+  def initialize(attributes={})
+    # perhaps this would be clearer removed and replaced with use of 
+    # a mocking library
+    a=attributes[:periodic_timer] and @periodic_timer=a
+
     init_listeners
     init_alerts
     init_collections
+    init_timers
     # with anonymous classes it sometimes gets hard to guess whether
     # "warn foo" is showing you a class or an instance.  This ivar
     # exists solely to help debugging
