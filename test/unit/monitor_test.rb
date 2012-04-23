@@ -88,6 +88,7 @@ describe Lizard::Monitor do
       end
       m=Class.new(Lizard::Monitor) do
         every 10 do
+          # check that this code is run with the correct self
           coll << self
         end
       end.new(:periodic_timer=>FakePeriodicTimer)
