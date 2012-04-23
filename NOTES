@@ -1,19 +1,27 @@
 A Monitor has 
 
  attribute :enabled (true or false) which says whether the admin
- *wants* it to be up
+ *wants* it to be up 
+
+[ok]
 
  attribute :health which takes some value denoting whether it is actually
  up, or is flakey, or is down, or has unknown status
+
+[this is not hooked up to anything useful]
 
 Monitors listen for Events, which may be things like :enable or
 :disable or :child_exited.  Event handlers are defined using the
 'listen' class method.  Event handlers may also signal events of their own, 
 or may raise Alerts
 
+[ok]
+
 Monitors may also invoke code periodically using the 'every' class
 method.  These timed handlers can poll for service status, signal events, 
 send alerts etc just as signal handlers can
+
+[ok]
 
 Alerts notify people that something has happened.  Alerts applicable
 to a given monitor are named using the ::alert class method and then
@@ -26,6 +34,8 @@ send that message somewhere
     alert :oncall, "We hate you"
   end
 
+[alert::email needs erb templates.  no other alert exists]
+
 Collections are data structures for collecting historical data:
 e.g. we might monitor service response time every minute and notify
 flakey health if it consistently exceeds a a threshold, or we might
@@ -33,17 +43,25 @@ collect a timestamp every time a process restarts and use it to
 trigger an alert if it dies too frequently. A collection is specified
 with a maximum age, and discards collected values exceeding that age.
 
+[ok, tho ineffcient]
+
 Collections are named using the class method ::collect.  Code in
 handlers may add values to a collection using the << notation
+
+[ok]
 
 There are some handy methods on collections to do things like
 averages, exponential time-weighted averages, and suchlike so we can
 make decisions on the data in them.
 
+[failing tests exist]
+
 A Process is a subclass of Monitor which includes a child process
 under the control of Lizard.  It has attributes :running and :pid.
 The class methods ::start and ::stop define how it is started and
 stopped
+
+[need an sh method that forks execs etc]
 
 Output and error streams from child processes are captured using the
 ::log class method, with which they can be monitored for particular
@@ -54,4 +72,18 @@ onto somewhere else (by default, syslog)
       if l.match /FATAL/ then signal :dead end
     end
 
+[needs writing]
 
+[syslogger needs writing]
+
+Over all control object (Lizard or Lizard::System or something)
+ - config for remote control
+ - context in which to declare monitors
+ - place to put signal handlers
+
+[needs writing]
+
+A filesystem monitor watches a filesystem and warns when it exceeds 
+x% full or ceases to be writable or etc
+
+[needs writing]
