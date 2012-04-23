@@ -27,13 +27,13 @@ jabber or whatever
 
 Collections are data structures for collecting historical data:
 e.g. we might monitor service response time every minute and notify
-flakey helth if it consisyently exceedsa a threshold, or we might
+flakey health if it consistently exceeds a a threshold, or we might
 collect a timestamp every time a process restarts and use it to
 trigger an alert if it dies too frequently. A collection is specified
 with a maximum age, and discards collected values exceeding that age.
 
-Collections are named using the class method ::collect.  To add a
-value to a collection, in a handler, use the <<  method
+Collections are named using the class method ::collect.  Code in
+handlers may add values to a collection using the << notation
 
 There are some handy methods on collections to do things like
 averages, exponential time-weighted averages, and suchlike so we can
