@@ -15,6 +15,15 @@ describe Lizard::Monitor::Process do
       end
     end.new
   end
+  describe "attributes" do
+    [:running,:pid].each do |a|
+      it "has #{a} attribute" do
+        assert Lizard::Monitor::Process.new.respond_to?(a) 
+      end
+    end
+  end
+
+
   it "#start starts" do
     @m.start
     assert @started

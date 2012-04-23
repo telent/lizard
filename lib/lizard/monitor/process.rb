@@ -11,6 +11,7 @@ class Lizard::Monitor::Process < Lizard::Monitor
       end
     end
   end
+  attr_reader :running, :pid
   listen :enable do
     start
   end  
