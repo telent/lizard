@@ -17,13 +17,14 @@ send alerts etc just as signal handlers can
 
 Alerts notify people that something has happened.  Alerts applicable
 to a given monitor are named using the ::alert class method and then
-created using the #alert instance method.  An Alert accepts an
-argument which is the message to send, and should have a #call method
-which sends it (think about this: we would be better to have the 
-class methods specify the message and the instance method merely sends it)
+created using the #alert instance method.  An alert is any object which
+accepts #call with a string 'message' argument, which should cause it to somehow
+send that message somewhere
 
-Alert can be subclassed for alerting people by email or by sms or
-jabber or whatever
+  alert :oncall, Lizard::Alert::Pager.new :number=>'5551234'
+  every 1.hour do
+    alert :oncall, "We hate you"
+  end
 
 Collections are data structures for collecting historical data:
 e.g. we might monitor service response time every minute and notify
