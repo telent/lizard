@@ -74,9 +74,11 @@ onto somewhere else (by default, syslog)
 
 [needs writing]
 
-[syslogger needs writing]
+[[ to test this we need to send stuff to the child stdout and stderr, which
+   is perhaps a problem if we don't even have a child process 
 
-Over all control object (Lizard or Lizard::System or something)
+
+Overall control object (Lizard or Lizard::System or something)
  - config for remote control
  - context in which to declare monitors
  - place to put signal handlers
