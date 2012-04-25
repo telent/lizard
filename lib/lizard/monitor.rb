@@ -36,59 +36,19 @@ class Lizard::Monitor
   attr_reader :health
 
   attr_reader :listeners
-  def init_listeners(clss=self.class)
-    @listeners ||= Hash.new {|h,k| h[k]=[] }
-    v=clss.instance_variable_get(:@clisteners) 
-    v and v.each do |a|
-      k,v=a.first
-      @listeners[k] << v
-    end
-    if (sup=clss.superclass) 
-      init_listeners sup
-    end    
-  end
-
-  def init_alerts(clss=self.class)
-    @alerts ||= Hash.new {|h,k| h[k]=[] }
-    v=clss.instance_variable_get(:@alerts) 
-    v and v.each do |a|
-      k,v=a.first
-      @alerts[k] << v
-    end
-    if (sup=clss.superclass) 
-      init_alerts sup
-    end    
-  end
-
-  def init_timers(clss=self.class)
-    v=clss.instance_variable_get(:@timers) 
-    v and v.each do |a|
-      k,v=a.first
-      v1=Proc.new do
-        self.instance_eval &v
-      end
-      (@periodic_timer || 
-       Kernel.const_get("EventMachine").const_get("PeriodicTimer")).new(k, v1)
-    end
-    if (sup=clss.superclass) 
-      init_timers sup
-    end    
-  end
-
   attr_reader :collection
-  def init_collections(clss=self.class)
-    @collection ||= Hash.new {|h,k| h[k]=[] }
-    v=clss.instance_variable_get(:@collections) 
+
+  def init_thing(symbol,initial,clss=self.class,&blk)
+    v=clss.instance_variable_get(symbol) 
     v and v.each do |a|
       k,v=a.first
-      # subclasses override superclass
-      @collection[k] ||= v
+      blk.call(k,v)
     end
     if (sup=clss.superclass) 
-      init_collections sup
+      init_thing symbol,initial,sup,&blk
     end    
   end
-  
+    
   def alert(name,message)
     @alerts[name].map{|a| a.call(message) }
   end
@@ -100,10 +60,24 @@ class Lizard::Monitor
     # a mocking library
     a=attributes[:periodic_timer] and @periodic_timer=a
 
-    init_listeners
-    init_alerts
-    init_collections
-    init_timers
+    init_thing(:@clisteners, @listeners=Hash.new {|h,k| h[k]=[] }) do |k,v|
+      @listeners[k] << v
+    end
+    init_thing(:@alerts, @alerts=Hash.new {|h,k| h[k]=[] }) do |k,v|
+      @alerts[k] << v
+    end
+    init_thing(:@timers, nil) do |k,v|
+      v1=Proc.new do
+        self.instance_eval &v
+      end
+      (@periodic_timer || 
+       Kernel.const_get("EventMachine").const_get("PeriodicTimer")).new(k, v1)
+    end
+    init_thing(:@collections, @collection = Hash.new {|h,k| h[k]=[]}) do |k,v|
+      # subclasses override superclass
+      @collection[k] ||= v
+    end
+  
     # with anonymous classes it sometimes gets hard to guess whether
     # "warn foo" is showing you a class or an instance.  This ivar
     # exists solely to help debugging
@@ -112,8 +86,6 @@ class Lizard::Monitor
 
   def notify event
     @listeners[event].each do |l|
-      #  needs to be instance_eval or something to ensure
-      # "this" is the instance
       instance_eval &l
     end
   end
