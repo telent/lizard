@@ -25,7 +25,7 @@ describe Lizard::Monitor::Process do
   it "#start starts" do
     @m.start
     assert @started
-  end
+  end 
   it "starts when :enable event received" do
     @m.notify :enable
     assert @started
@@ -37,20 +37,6 @@ describe Lizard::Monitor::Process do
     refute @started
   end
   
-  it "std{out,err} streams are declared with stream" do
-    s=StringIO.new
-    m=Class.new(Lizard::Monitor::Process) do
-      start do
-        stream[:stderr].write("hello")
-      end
-      stream :stderr, s do |data|
-        data ~ /BOO/ and raise "boo"
-      end
-    end.new
-    m.start
-    assert_match /hello/, stream.string
-  end
-
   it "restarts when sent :process_died event"
   it "doesn't restart if health: fail"
   it "sets health: warn if child dies more than three times in a minute"

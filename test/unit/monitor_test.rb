@@ -123,6 +123,34 @@ describe Lizard::Monitor do
     end
   end
 
+  describe "std{out,err} streams are declared with stream" do
+    before do
+      @s=StringIO.new
+      s=@s
+      @m=Class.new(Lizard::Monitor::Process) do
+        start do
+          stream[:stderr].write("hello")
+        end
+        stop do
+          stream[:stderr].write("BOO FOO")
+        end
+        stream :stderr, s do |data|
+          /BOO/.match(data) and raise Exception, "boo"
+          data.split(/l/).join("-") 
+        end
+      end.new
+    end
+    it "writes data" do
+      @m.start
+      assert_match /he--o/, @s.string
+    end
+    it "filters data" do
+      assert_raises(Exception) do
+        @m.stop
+      end
+    end
+  end
+
   describe "collect" do
     it "::collect creates a time-series collection (e.g. for metrics)" do
       m=Class.new(Lizard::Monitor) do

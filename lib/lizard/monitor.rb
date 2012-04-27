@@ -1,4 +1,6 @@
 require 'pp' 
+require 'lizard/filtered_stream'
+
 class Lizard; end
 
 class Lizard::Monitor
@@ -25,6 +27,10 @@ class Lizard::Monitor
       @collections||=[]
       @collections << {name => clss.new(options) }
     end
+    def stream(name, under_stream, &blk)
+      @streams||=[]
+      @streams << {name => Lizard::FilteredStream.new(under_stream,blk)}
+    end
   end
 
   
@@ -37,6 +43,7 @@ class Lizard::Monitor
 
   attr_reader :listeners
   attr_reader :collection
+  attr_reader :stream
 
   def init_thing(symbol,initial,clss=self.class,&blk)
     v=clss.instance_variable_get(symbol) 
@@ -76,6 +83,10 @@ class Lizard::Monitor
     init_thing(:@collections, @collection = Hash.new {|h,k| h[k]=[]}) do |k,v|
       # subclasses override superclass
       @collection[k] ||= v
+    end
+    init_thing(:@streams, @stream={}) do |k,v|
+      # subclasses override superclass
+      @stream[k] ||= v
     end
   
     # with anonymous classes it sometimes gets hard to guess whether
